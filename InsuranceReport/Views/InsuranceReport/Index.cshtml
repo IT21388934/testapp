@@ -1,0 +1,48 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+}
+
+<div>
+    <h3>Gender checker by the NIC</h3>
+    <div class="mb-3">
+        <label for="exampleFormControlInput1" class="form-label">NIC</label>
+        <input type="text" class="form-control" id="nicID" placeholder="Your NIC">
+    </div>
+    <button class="btn-sm btn-primary" id="checkBtn">Check the Gender</button>
+    <div class="mb-3">
+        <div class="bg-primary text-warning" id="ppType"></div>
+    </div>
+    <div class="mb-3">
+        <div class="bg-primary text-warning" id="genderID"></div>
+    </div>
+</div>
+
+<script src="~/Scripts/jquery-3.4.1.js"></script>
+<script>
+    $('#checkBtn').on('click', function () {
+        var nic = $('#nicID').val();
+        var sendData = { nic: nic }
+
+        $('#ppType').empty();
+
+        $.ajax({
+            type: 'POST',
+            url: 'InsuranceReport/checkNic',
+            data: sendData ,
+            success: function (data) {
+                console.log(data);
+
+                var nicType = '<div>' + data.result + '</div>';
+
+                $('#ppType').append(nicType);
+
+            },
+            error: function (e) {
+                console.error(e);
+            }
+        })
+        
+    })
+</script>
+
