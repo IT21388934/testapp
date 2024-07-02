@@ -24,5 +24,18 @@ namespace InsuranceReport.DAL
             return NicType;
 
         }
+
+        public static string CheckTheGender(string nic)
+        {
+
+            string gender = null;
+
+            string nicType = CheckTheNICType(nic);
+
+
+            return gender;
+
+
+        }
     }
 }
