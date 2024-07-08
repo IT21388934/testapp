@@ -17,11 +17,17 @@ namespace InsuranceReport.Controllers
 
         public JsonResult checkNic(string nic)
         {
-            string result = "null";
+            string nictype = "null";
+            string gender = null;
+            string dob = null;
 
-            result = InsuranceModule.CheckTheNICType(nic);
+            nictype = InsuranceModule.CheckTheNICType(nic);
+            gender = InsuranceModule.CheckTheGender(nic);
 
-            return Json(new { result }, JsonRequestBehavior.AllowGet);
+            dob = InsuranceModule.Get_Birthday(nic);
+            
+
+            return Json(new { nictype,gender,dob }, JsonRequestBehavior.AllowGet);
 
         }
 
