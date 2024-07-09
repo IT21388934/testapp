@@ -1,0 +1,52 @@
+﻿@model InsuranceReport.Models.InsuranceReportModel
+@{
+    ViewBag.Title = "ElderRecords";
+}
+
+<h2>ElderRecords</h2>
+
+<div class="container-fluid tablePositionting">
+
+    <table id="example" class="table table-striped" style="width:100%">
+        <thead class="tablehdDesign">
+            <tr>
+                <th>Sno</th>
+                <th>Job Category</th>
+                <th>Manpower Level</th>
+                <th>Country</th>
+                <th>No. of Manpower Intents</th>
+                <th>No. of Vacancies</th>
+                <th>SLBFE Registrations</th>
+                <th>Job Order Expire Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.ElderRecords.Rows.Count == 0)
+            {
+                <tr>
+                    <td colspan="8" class="text-center">No data found</td>
+                </tr>
+            }
+            else
+            {
+                foreach (System.Data.DataRow r in Model.ElderRecords.Rows)
+                {
+                    var rowNum = Model.ElderRecords.Rows.IndexOf(r) + 1;
+                    <tr class="tb_row">
+                        <td class="tr_design">@rowNum</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(0).ToString()</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(1).ToString()</td>
+                        <td scope="row" class="tb_row customWidth">@r.ItemArray.GetValue(2).ToString()</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(3).ToString()</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(4).ToString()</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(5).ToString()</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(6).ToString()</td>
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(7).ToString()</td>
+                      
+                       
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>

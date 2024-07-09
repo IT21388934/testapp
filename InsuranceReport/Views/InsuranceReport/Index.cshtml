@@ -19,6 +19,9 @@
     <div class="mb-3">
         <div class="p-3 text-warning" id="DobId"></div>
     </div>
+    <div class="mb-3">
+        <div class="p-3 text-warning" id="ageID"></div>
+    </div>
 </div>
 
 <script src="~/Scripts/jquery-3.4.1.js"></script>
@@ -30,6 +33,7 @@
         $('#ppType').empty();
         $('#genderID').empty();
         $('#DobId').empty();
+      $('#ageID').empty();
 
         $.ajax({
             type: 'POST',
@@ -40,11 +44,13 @@
 
                 var nicType = '<div>' + data.nictype + '</div>';
                 var gender = '<div>' + data.gender + '</div>';
-                var dob = '<div>' + data.dob + '</div>';
+                var dob = '<div>' + data.dob + '</div>'; 
+                var age = '<div>' + data.age + '</div>';
 
                 $('#ppType').append(nicType);
                 $('#genderID').append(gender);
                 $('#DobId').append(dob);
+                $('#ageID').append(age);
 
             },
             error: function (e) {

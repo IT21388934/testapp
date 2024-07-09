@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 
 namespace InsuranceReport.DAL
@@ -42,12 +45,12 @@ namespace InsuranceReport.DAL
             return a >= 500 ? "Female" : "Male";
         }
 
-        public static string Get_Birthday(string nic)
+        public static DateTime Get_Birthday(string nic)
         {
             string nicType = CheckTheNICType(nic);
             if (nicType == "Invalid NIC")
             {
-                return "Invalid NIC";
+                throw new ArgumentException("Invalid NIC");
             }
 
             int year;
@@ -68,15 +71,58 @@ namespace InsuranceReport.DAL
             {
                 dayOfYear -= 500;
             }
-
             if(year % 4 != 0)
             {
-                dayOfYear = dayOfYear - 1;
+                dayOfYear = dayOfYear -1;
             }
-          
 
             DateTime birthDate = new DateTime(year, 1, 1).AddDays(dayOfYear - 1);
-            return birthDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            return birthDate;
+        }
+
+        public static int GetAge(string nic)
+        {
+            DateTime birthDate = Get_Birthday(nic);
+            DateTime today = DateTime.Today;
+            int age = today.Year - birthDate.Year;
+
+            // If the birthday has not occurred yet this year, subtract one year from the age
+            if (birthDate > today.AddYears(-age))
+            {
+                age--;
+            }
+
+            return age;
+        }
+
+        public static DataTable get_older_employees()
+        {
+            DataTable dt = new DataTable();
+            string sql = "SELECT * FROM( " +
+                "SELECT FA_INDEX as ind, reg_Date as regDate, name, Birth_Day as dob, DATEDIFF(YEAR, Birth_Day, GETDATE()) AS age," +
+                "NIC_No as nic, sex, Ins_Month FROM FinalApproval.dbo.FNAP2401 UNION ALL " +
+                "SELECT se_index as ind, reg_date as regDate, surname as name, birth_day as dob, DATEDIFF(YEAR, Birth_Day, GETDATE()) AS age, " +
+                "nic_no as nic, sex, ins_month " +
+                "FROM Self.dbo.self2024 ) AS a " +
+                "where a.age >= 65 and Ins_Month is null order by regDate";
+
+            using (var conn_uat = new SqlConnection(ConfigurationManager.ConnectionStrings["connx"].ConnectionString))
+            {
+
+                conn_uat.Open();
+
+                SqlCommand command = new SqlCommand(sql, conn_uat);
+
+                SqlDataAdapter da = new SqlDataAdapter(command);
+                DataSet ds = new DataSet();
+                da.Fill(ds);
+                dt = ds.Tables[0];
+
+            };
+
+            return dt;
         }
     }
+
+
 }
