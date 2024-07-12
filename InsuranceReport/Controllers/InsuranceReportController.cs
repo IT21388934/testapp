@@ -37,15 +37,29 @@ namespace InsuranceReport.Controllers
 
         }
 
+        //public ActionResult ElderRecords()
+        //{
+        //    InsuranceReportModel model = new InsuranceReportModel();
+
+        //    model.ElderRecords = InsuranceModule.get_older_employees();
+        //    return View(model);
+        //}
+
         public ActionResult ElderRecords()
         {
-            InsuranceReportModel model = new InsuranceReportModel();
-
-            model.ElderRecords = InsuranceModule.get_older_employees();
-            return View(model);
+            InsuranceReportModel mod = new InsuranceReportModel();
+            mod.IncorrectData = InsuranceModule.FindInvalidRecords();
+            return View(mod);
         }
 
+        public JsonResult MarkAsNOTSEN(List<string> list)
+        {
+            Boolean isSuccess = InsuranceModule.updateElderRecords(list);
 
+
+
+            return Json(new { }, JsonRequestBehavior.AllowGet);
+        }
 
 
     }

@@ -2,51 +2,268 @@
 @{
     ViewBag.Title = "ElderRecords";
 }
+@*<link href="~/Content/bootstrapNEW.css" rel="stylesheet" />*@
+<style>
+    .tb_row_error {
+        background-color: #fa9999;
+        color: #6f1212;
+        font-weight: 600;
+    }
 
-<h2>ElderRecords</h2>
+    .tb_row_correct {
+        background-color: #c9f7c6;
+        color: #2a6127;
+        font-weight: 600;
+    }
 
-<div class="container-fluid tablePositionting">
+    .scrollToTopBtn {
+        position: fixed;
+        bottom: 50px;
+        right: 50px;
+        width: 50px;
+        height: 50px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 24px;
+        text-align: center;
+        cursor: pointer;
+        display: none;
+        justify-content: center;
+        align-items: center;
+        box-shadow: -4px 7px 13px -1px rgba(0,0,0,0.78);
+    }
 
-    <table id="example" class="table table-striped" style="width:100%">
+        .scrollToTopBtn:hover {
+            background-color: #0056b3;
+        }
+</style>
+
+<h2>SLBFE Registration - Age is greater than or equal 65</h2>
+
+<div class="container-fluid tablePositioning">
+    <div class="d-flex justify-content-end gap-2">
+        <button class="btn btn-primary btn-sm mt-2" id="getCheckedIndices">Update the Selected</button>
+        <button class="btn btn-primary btn-sm mt-2" id="exportExcel" onclick="executeExcel()">Download Excel</button>
+    </div>
+
+    <table id="example" class="table border-0" style="width:100%">
         <thead class="tablehdDesign">
             <tr>
+                <th><input type="checkbox" id="selectAll" /></th>
                 <th>Sno</th>
-                <th>Job Category</th>
-                <th>Manpower Level</th>
-                <th>Country</th>
-                <th>No. of Manpower Intents</th>
-                <th>No. of Vacancies</th>
-                <th>SLBFE Registrations</th>
-                <th>Job Order Expire Date</th>
+                <th>Index</th>
+                <th>Reg_date</th>
+                <th>Name</th>
+                <th>Birthday</th>
+                <th>Age</th>
+                <th>NIC</th>
+                <th>Gender</th>
             </tr>
         </thead>
         <tbody>
-            @if (Model.ElderRecords.Rows.Count == 0)
+            @if (Model.IncorrectData.Rows.Count == 0)
             {
                 <tr>
-                    <td colspan="8" class="text-center">No data found</td>
+                    <td colspan="9" class="text-center">No data found</td>
                 </tr>
             }
             else
             {
-                foreach (System.Data.DataRow r in Model.ElderRecords.Rows)
+                foreach (System.Data.DataRow r in Model.IncorrectData.Rows)
                 {
-                    var rowNum = Model.ElderRecords.Rows.IndexOf(r) + 1;
-                    <tr class="tb_row">
+                    var rowNum = Model.IncorrectData.Rows.IndexOf(r) + 1;
+                    var errorType = r["ErrorType"].ToString();
+                    string rowClass = errorType == "Correct Data" ? "tb_row_correct" : "tb_row_error";
+
+                    <tr class="tb_row @rowClass">
+                        <td><input type="checkbox" class="rowCheckbox" /></td>
                         <td class="tr_design">@rowNum</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(0).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(1).ToString()</td>
-                        <td scope="row" class="tb_row customWidth">@r.ItemArray.GetValue(2).ToString()</td>
+                        <td scope="row" class="tb_row ">@r.ItemArray.GetValue(2).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(3).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(4).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(5).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(6).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(7).ToString()</td>
-                      
-                       
+                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(8).ToString()</td>
+                        <td scope="row" class="tb_row">
+                            <button type="button" class="btn-sm btn-primary edit-button" data-bs-toggle="modal" data-bs-target="#staticBackdrop"
+                                    data-index="@r.ItemArray.GetValue(0).ToString()"
+                                    data-reg_date="@r.ItemArray.GetValue(1).ToString()"
+                                    data-name="@r.ItemArray.GetValue(2).ToString()"
+                                    data-birthday="@r.ItemArray.GetValue(3).ToString()"
+                                    data-age="@r.ItemArray.GetValue(4).ToString()"
+                                    data-nic="@r.ItemArray.GetValue(5).ToString()"
+                                    data-gender="@r.ItemArray.GetValue(6).ToString()">
+                                Edit
+                            </button>
+                        </td>
                     </tr>
                 }
             }
         </tbody>
     </table>
+
+    <!-- Modal -->
+    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Edit Record</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editForm">
+                        <input type="hidden" id="editIndex" name="editIndex" />
+                        <input type="hidden" id="editReg_date" name="editReg_date" />
+
+                        <div class="row">
+                            <div class="col-lg-12">
+                                <div class="mb-3">
+                                    <label for="editName" class="form-label">Name</label>
+                                    <input type="text" class="form-control flex-wrap" id="editName" name="editName" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editBirthday" class="form-label">Birthday</label>
+                                    <input type="date" class="form-control" id="editBirthday" name="editBirthday" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editAge" class="form-label">Age</label>
+                                    <input type="number" class="form-control" id="editAge" name="editAge" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editNIC" class="form-label">NIC</label>
+                                    <input type="text" class="form-control" id="editNIC" name="editNIC" required>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="editGender" class="form-label">Gender</label>
+                                    <input type="text" class="form-control" id="editGender" name="editGender" required>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveChanges">Save changes</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
 </div>
+
+
+    <!--Scroll Button-->
+    <button id="scrollToTopBtn" class="scrollToTopBtn">↑</button>
+</div>
+<script src="~/Scripts/jquery-3.4.1.js"></script>
+<script src="~/Content/sweetalert.js"></script>
+<script src="~/Scripts/excelGenerator.js"></script>
+<script>
+    // Show or hide the scroll to top button
+    $(window).scroll(function () {
+        if ($(this).scrollTop() > 150) {
+            $('#scrollToTopBtn').fadeIn();
+        } else {
+            $('#scrollToTopBtn').fadeOut();
+        }
+    });
+
+    // Scroll to top when the button is clicked
+    $('#scrollToTopBtn').click(function () {
+        $('html, body').animate({ scrollTop: 0 }, 'slow');
+        return false;
+    });
+
+    $('#selectAll').click(function () {
+        var isChecked = $(this).is(':checked');
+        $('.rowCheckbox').prop('checked', isChecked);
+    });
+
+    $('#getCheckedIndices').click(function () {
+        var checkedIndices = [];
+        $('.rowCheckbox:checked').each(function () {
+            var indexValue = $(this).closest('tr').find('td:nth-child(3)').text();
+            checkedIndices.push(indexValue);
+        });
+
+        if (checkedIndices.length === 0) {
+            Swal.fire({
+                icon: "warning",
+                title: "Oops...",
+                text: "Please select the records that you need to update!",
+            });
+            return;
+        } else {
+            console.log(checkedIndices);
+            $.ajax({
+                type: 'POST',
+                url: '/InsuranceReport/MarkAsNOTSEN',
+                data: JSON.stringify({ list: checkedIndices }),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (data) {
+                    console.log(data);
+                },
+                error: function (e) {
+                    console.error(e);
+                }
+            });
+        }
+    });
+    $(document).ready(function () {
+        $('.edit-button').on('click', function () {
+            // Retrieve data attributes from the button
+            var index = $(this).data('index');
+            var regDate = $(this).data('reg_date');
+            var name = $(this).data('name');
+            var birthday = $(this).data('birthday');
+
+            // Convert birthday to YYYY-MM-DD format
+            var date = new Date(birthday);
+            var day = ("0" + date.getDate()).slice(-2);
+            var month = ("0" + (date.getMonth() + 1)).slice(-2);
+            var year = date.getFullYear();
+            var formattedDate = year + '-' + month + '-' + day;
+
+
+            var age = $(this).data('age');
+            var nic = $(this).data('nic');
+            var gender = $(this).data('gender');
+
+            // Set values to the modal fields
+            $('#editIndex').val(index);
+            $('#editReg_date').val(regDate);
+            $('#editName').val(name);
+
+            $('#editBirthday').val(formattedDate);
+
+            $('#editAge').val(age);
+            $('#editNIC').val(nic);
+            $('#editGender').val(gender);
+        });
+    });
+
+            function executeExcel() {
+                var table = document.getElementById('example');
+                var wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+                XLSX.writeFile(wb, 'ElderRecords.xlsx');
+            }
+
+</script>
