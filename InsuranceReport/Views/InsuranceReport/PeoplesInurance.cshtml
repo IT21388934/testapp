@@ -1,6 +1,6 @@
 ﻿@model InsuranceReport.Models.InsuranceReportModel
 @{
-    ViewBag.Title = "ElderRecords";
+    ViewBag.Title = "PeoplesInurance";
 }
 @*<link href="~/Content/bootstrapNEW.css" rel="stylesheet" />*@
 <style>
@@ -40,7 +40,7 @@
         }
 </style>
 
-<h2>SLBFE Registration - Age is greater than or equal 65</h2>
+<h2>People Insurance List</h2>
 
 <div class="container-fluid tablePositioning">
     <div class="d-flex justify-content-end gap-2">
@@ -89,7 +89,7 @@
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(5).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(6).ToString()</td>
                         <td scope="row" class="tb_row">@r.ItemArray.GetValue(7).ToString()</td>
-                        <td scope="row" class="tb_row">@r.ItemArray.GetValue(8).ToString()</td>
+                        @*<td scope="row" class="tb_row">@r.ItemArray.GetValue(8).ToString()</td>*@
                         <td scope="row" class="tb_row">
                             <button type="button" class="btn-sm btn-primary edit-button" data-bs-toggle="modal" data-bs-target="#staticBackdrop"
                                     data-index="@r.ItemArray.GetValue(0).ToString()"
@@ -170,8 +170,8 @@
 </div>
 
 
-    <!--Scroll Button-->
-    <button id="scrollToTopBtn" class="scrollToTopBtn">↑</button>
+<!--Scroll Button-->
+<button id="scrollToTopBtn" class="scrollToTopBtn">↑</button>
 </div>
 <script src="~/Scripts/jquery-3.4.1.js"></script>
 <script src="~/Content/sweetalert.js"></script>
@@ -261,10 +261,10 @@
         });
     });
 
-            function executeExcel() {
-                var table = document.getElementById('example');
-                var wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
-                XLSX.writeFile(wb, 'ElderRecords.xlsx');
+    function executeExcel() {
+        var table = document.getElementById('example');
+        var wb = XLSX.utils.table_to_book(table, { sheet: "Sheet1" });
+        XLSX.writeFile(wb, 'ElderRecords.xlsx');
     }
 
     function printPage() {

@@ -166,6 +166,8 @@
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\InsuranceReport\Index.cshtml" />
     <Content Include="Views\InsuranceReport\ElderRecords.cshtml" />
+    <Content Include="Views\InsuranceReport\ElRecords.cshtml" />
+    <Content Include="Views\InsuranceReport\PeoplesInurance.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\" />

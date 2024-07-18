@@ -1,120 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Globalization;
-using System.Collections.Generic;
 
 namespace InsuranceReport.DAL
 {
     public class InsuranceModule
     {
-        public static string CheckTheNICType(string nic)
-        {
-            if (nic.Length == 12 && nic != "000000000000")
-            {
-                return "New NIC";
-            }
-            else if (nic.Length == 10 && (nic[nic.Length - 1] == 'V' || nic[nic.Length - 1] == 'X'))
 
-            {
-                return "Old NIC";
-            }
-            else
-            {
-                return "Invalid NIC";
-            }
-        }
-
-        public static string CheckTheGender(string nic)
-        {
-            string nicType = CheckTheNICType(nic);
-            if (nicType == "Invalid NIC")
-            {
-                return "Invalid NIC";
-            }
-
-            int a;
-            if (nicType == "Old NIC")
-            {
-                a = int.Parse(nic.Substring(2, 3));
-            }
-            else // New NIC
-            {
-                a = int.Parse(nic.Substring(4, 3));
-            }
-
-            return a >= 500 ? "F" : "M";
-        }
-
-        public static DateTime Get_Birthday(string nic)
-        {
-            string nicType = CheckTheNICType(nic);
-            if (nicType == "Invalid NIC")
-            {
-                throw new ArgumentException("Invalid NIC");
-            }
-
-            int year;
-            int dayOfYear;
-            if (nicType == "New NIC")
-            {
-                year = int.Parse(nic.Substring(0, 4));
-                dayOfYear = int.Parse(nic.Substring(4, 3));
-            }
-            else // Old NIC
-            {
-                year = int.Parse(nic.Substring(0, 2));
-                year += (year < 30) ? 2000 : 1900; // Adjust century
-                dayOfYear = int.Parse(nic.Substring(2, 3));
-            }
-
-            if (CheckTheGender(nic) == "F")
-            {
-                dayOfYear -= 500;
-            }
-
-            // Check for leap year adjustment
-            if (DateTime.IsLeapYear(year))
-            {
-                if (dayOfYear > 366 || dayOfYear < 1)
-                {
-                    throw new ArgumentOutOfRangeException("dayOfYear", "Day of year is out of range for the given year.");
-                }
-            }
-            else
-            {
-                if (dayOfYear > 365 || dayOfYear < 1)
-                {
-
-                    throw new ArgumentOutOfRangeException("dayOfYear", "Day of year is out of range for the given year.");
-                }
-
-                if (dayOfYear > 60)
-                {
-                    dayOfYear = dayOfYear - 1;
-                }
-            }
-
-            DateTime birthDate = new DateTime(year, 1, 1).AddDays(dayOfYear - 1);
-            return birthDate;
-        }
-
-        public static int GetAge(string nic)
-        {
-            DateTime birthDate = Get_Birthday(nic);
-            DateTime today = DateTime.Today;
-            int age = today.Year - birthDate.Year;
-
-            // If the birthday has not occurred yet this year, subtract one year from the age
-            if (birthDate > today.AddYears(-age))
-            {
-                age--;
-            }
-
-            return age;
-        }
-
+        //private static readonly int currentMonth = DateTime.Now.Month;
+        private static readonly int currentMonth = 7;
+        //get the employeee deatailes how is the age is grater than 65 at the registration date.
         public static DataTable get_older_employees()
         {
             DataTable dt = new DataTable();
@@ -143,72 +40,73 @@ namespace InsuranceReport.DAL
             return dt;
         }
 
-        public static DataTable FindInvalidRecords()
+        public static DataTable get_employees_age_lower_65()
         {
-            DataTable records = get_older_employees();
-            DataTable dt = records.Clone(); // Create a new DataTable with the same structure as records
-            dt.Columns.Add("ErrorType", typeof(string)); // Add a new column for the error type
+            int month = currentMonth - 1;
+            DataTable dt = new DataTable();
+            string sql = "select * from( " +
+                "SELECT se_index as ind, reg_date as regDate, surname as name, birth_day as dob, " +
+                "DATEDIFF(YEAR, Birth_Day, reg_Date) AS age, nic_no as nic, sex, ins_month, status " +
+                "FROM[rumeshTest].[dbo].self2024New2 " +
+                "UNION ALL " +
+                "SELECT FA_INDEX as ind, reg_date as regDate, Name as name, birth_day as dob, " +
+                "DATEDIFF(YEAR, Birth_Day, reg_Date) AS age, nic_no as nic, sex, ins_month, status " +
+                "FROM[rumeshTest].[dbo].[FNAP2401New2] ) as a " +
+                "where DATEDIFF(YEAR, a.dob, a.regDate) < 65  and(a.status = 'R' or a.status is null)" +
+                " and month(a.regDate) <= "+month+ " " +
+                "and a.ins_month is null order by regDate desc ";
 
-            foreach (DataRow row in records.Rows)
+            using (var conn_uat = new SqlConnection(ConfigurationManager.ConnectionStrings["connx"].ConnectionString))
             {
-                try
-                {
-                    string nic = row["nic"].ToString().Trim();
-                    DateTime storedDob = DateTime.Parse(row["dob"].ToString());
-                    string storedGender = row["sex"].ToString();
 
-                    string nicType = CheckTheNICType(nic);
-                    if (nicType == "Invalid NIC")
-                    {
-                        DataRow newRow = dt.NewRow();
-                        newRow.ItemArray = row.ItemArray;
-                        newRow["ErrorType"] = "Invalid NIC";
-                        dt.Rows.Add(newRow);
-                        continue;
-                    }
+                conn_uat.Open();
 
-                    DateTime calculatedDob = Get_Birthday(nic);
-                    string calculatedGender = CheckTheGender(nic);
+                SqlCommand command = new SqlCommand(sql, conn_uat);
 
-                    if (storedDob != calculatedDob && !storedGender.Equals(calculatedGender, StringComparison.OrdinalIgnoreCase))
-                    {
-                        DataRow newRow = dt.NewRow();
-                        newRow.ItemArray = row.ItemArray;
-                        newRow["ErrorType"] = "Wrong Birthday, Wrong Gender";
-                        dt.Rows.Add(newRow);
-                    }
-                    else if (storedDob != calculatedDob)
-                    {
-                        DataRow newRow = dt.NewRow();
-                        newRow.ItemArray = row.ItemArray;
-                        newRow["ErrorType"] = "Wrong Birthday";
-                        dt.Rows.Add(newRow);
-                    }
-                    else if (!storedGender.Equals(calculatedGender, StringComparison.OrdinalIgnoreCase))
-                    {
-                        DataRow newRow = dt.NewRow();
-                        newRow.ItemArray = row.ItemArray;
-                        newRow["ErrorType"] = "Wrong Gender";
-                        dt.Rows.Add(newRow);
-                    }
-                    else
-                    {
-                        DataRow newRow = dt.NewRow();
-                        newRow.ItemArray = row.ItemArray;
-                        newRow["ErrorType"] = "Correct Data";
-                        dt.Rows.Add(newRow);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Handle or log the exception as needed
-                    // For now, just continue to the next record
-                    continue;
-                }
-            }
+                SqlDataAdapter da = new SqlDataAdapter(command);
+                DataSet ds = new DataSet();
+                da.Fill(ds);
+                dt = ds.Tables[0];
+
+            };
 
             return dt;
         }
+
+        public static DataTable get_People_Insurance_Records()
+        {
+            int month = currentMonth - 1;
+            DataTable dt = new DataTable();
+            string sql = "select ind,regDate,name,dob,age,nic,sex from( SELECT se_index as ind, reg_date as regDate, surname as name, birth_day as dob, " +
+                "DATEDIFF(YEAR, Birth_Day, reg_Date) AS age, nic_no as nic, sex, ins_month, status, jobcate as jobCate, " +
+                "centre_code as cenCode " +
+                "FROM[rumeshTest].[dbo].self2024New2 UNION ALL " +
+                "SELECT FA_INDEX as ind, reg_date as regDate, Name as name, birth_day as dob, " +
+                "DATEDIFF(YEAR, Birth_Day, reg_Date) AS age, nic_no as nic, sex, ins_month, status, JobCate as jobCate, centre_code as cenCode " +
+                "FROM[rumeshTest].[dbo].[FNAP2401New2] ) as a " +
+                "INNER JOIN[Utility].[dbo].[JOB_UNIT] ju on a.jobCate = ju.code " +
+                "where DATEDIFF(YEAR, a.dob, a.regDate) < 65  and(a.status = 'R' or a.status is null) " +
+                "and month(a.regDate) <= "+month+" " +
+                "and a.ins_month is null and a.sex = 'M' or(a.sex = 'F' and ju.SECTOR = 'N') or a.cenCode = 'T' " +
+                "order by regDate desc ";
+
+            using (var conn_uat = new SqlConnection(ConfigurationManager.ConnectionStrings["connx"].ConnectionString))
+            {
+
+                conn_uat.Open();
+
+                SqlCommand command = new SqlCommand(sql, conn_uat);
+
+                SqlDataAdapter da = new SqlDataAdapter(command);
+                DataSet ds = new DataSet();
+                da.Fill(ds);
+                dt = ds.Tables[0];
+
+            };
+
+            return dt;
+        }
+
 
         public static Boolean updateElderRecords(List<string> list)
         {
@@ -222,9 +120,6 @@ namespace InsuranceReport.DAL
             //{
             //   string letter = 
             //}
-
-
-
 
             return false;
         }
